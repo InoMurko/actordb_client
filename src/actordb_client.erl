@@ -63,11 +63,27 @@ exec(PoolName,Actor,Type,Sql,Flags) ->
     end),
     resp(R).
 
+exec(Actor,Type,Sql,Flags,BindingVals) ->
+	exec(default_pool,Actor,Type,Sql,Flags,BindingVals).
+exec(PoolName,Actor,Type,Sql,Flags,BindingVals) ->
+	R = poolboy:transaction(PoolName, fun(Worker) ->
+        gen_server:call(Worker, {call, exec_single_prepare, [Actor,Type,Sql,Flags,BindingVals]})
+    end),
+    resp(R).
+
 exec_multi(Actors, Type, Sql,Flags) ->
 	exec_multi(default_pool,Actors,Type,Sql,Flags).
 exec_multi(PoolName,[_|_] = Actors, Type, Sql, Flags) ->
 	R = poolboy:transaction(PoolName, fun(Worker) ->
         gen_server:call(Worker, {call, exec_multi, [Actors,Type,Sql,Flags]})
+    end),
+    resp(R).
+
+exec_multi_prepare(Actors, Type, Sql,Flags,BindingVals) ->
+	exec_multi_prepare(default_pool,Actors,Type,Sql,Flags,BindingVals).
+exec_multi_prepare(PoolName,[_|_] = Actors, Type, Sql, Flags,BindingVals) ->
+	R = poolboy:transaction(PoolName, fun(Worker) ->
+        gen_server:call(Worker, {call, exec_multi_prepare, [Actors,Type,Sql,Flags,BindingVals]})
     end),
     resp(R).
 
@@ -79,11 +95,27 @@ exec_all(PoolName,Type,Sql,Flags) ->
     end),
     resp(R).
 
+exec_all_prepare(Type,Sql,Flags,BindingVals) ->
+	exec_all_prepare(default_pool,Type,Sql,Flags,BindingVals).
+exec_all_prepare(PoolName,Type,Sql,Flags,BindingVals) ->
+	R = poolboy:transaction(PoolName, fun(Worker) ->
+        gen_server:call(Worker, {call, exec_all_prepare, [Type,Sql,Flags,BindingVals]})
+    end),
+    resp(R).
+
 exec(Sql) ->
 	exec(default_pool,Sql).
 exec(PoolName,Sql) ->
 	R = poolboy:transaction(PoolName, fun(Worker) ->
         gen_server:call(Worker, {call, exec_sql, [Sql]})
+    end),
+    resp(R).
+
+exec_prepare(Sql,BindingVals) ->
+	exec_prepare(default_pool,Sql,BindingVals).
+exec_prepare(PoolName,Sql,BindingVals) ->
+	R = poolboy:transaction(PoolName, fun(Worker) ->
+        gen_server:call(Worker, {call, exec_sql_prepare, [Sql,BindingVals]})
     end),
     resp(R).
 
